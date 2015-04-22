@@ -17,7 +17,7 @@ DEP[0]=md-addins
 DEP_NAME[0]=MDADDINS
 DEP_PATH[0]=${top_srcdir}/../md-addins
 DEP_MODULE[0]=git@github.com:xamarin/md-addins.git
-DEP_NEEDED_VERSION[0]=4aea41c2bc9c0bde1408afda51ccddd49750eb0f
+DEP_NEEDED_VERSION[0]=5678c12ef089a2f3ab82e31c7735ebf1538fbc5a
 DEP_BRANCH_AND_REMOTE[0]="profiler-xm-support origin/profiler-xm-support"
 
 # heap-shot
