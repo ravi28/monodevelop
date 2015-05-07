@@ -99,6 +99,7 @@ namespace MonoDevelop.Ide.Gui.Pads
 			internal const int File        = 4;
 			internal const int Project     = 5;
 			internal const int Path        = 6;
+			internal const int Category    = 7;
 		}
 
 		public Gtk.Widget Control {
@@ -294,14 +295,15 @@ namespace MonoDevelop.Ide.Gui.Pads
 
 		void StoreColumnsVisibility ()
 		{
-			string columns = String.Format ("{0};{1};{2};{3};{4};{5};{6}",
+			string columns = String.Format ("{0};{1};{2};{3};{4};{5};{6};{7}",
 			                                view.Columns[VisibleColumns.Type].Visible,
 			                                view.Columns[VisibleColumns.Marked].Visible,
 			                                view.Columns[VisibleColumns.Line].Visible,
 			                                view.Columns[VisibleColumns.Description].Visible,
 			                                view.Columns[VisibleColumns.File].Visible,
 			                                view.Columns[VisibleColumns.Project].Visible,
-			                                view.Columns[VisibleColumns.Path].Visible);
+			                                view.Columns[VisibleColumns.Path].Visible,
+			                                view.Columns[VisibleColumns.Category].Visible);
 			PropertyService.Set ("Monodevelop.ErrorListColumns", columns);
 		}
 		
@@ -376,6 +378,14 @@ namespace MonoDevelop.Ide.Gui.Pads
 			columnsActions[columnPath] = VisibleColumns.Path;
 			group.Add (columnPath);
 
+			var columnCategory = new ToggleAction ("columnCategory", GettextCatalog.GetString ("Category"),
+			                                       GettextCatalog.GetString ("Toggle visibility of Category column"), null);
+			columnCategory.Toggled += OnColumnVisibilityChanged;
+			columnsActions[columnCategory] = VisibleColumns.Category;
+			group.Add (columnCategory);
+
+
+
 			var uiManager = new UIManager ();
 			uiManager.InsertActionGroup (group, 0);
 			
@@ -392,6 +402,7 @@ namespace MonoDevelop.Ide.Gui.Pads
 				+ "<menuitem action='columnFile' />"
 				+ "<menuitem action='columnProject' />"
 				+ "<menuitem action='columnPath' />"
+				+ "<menuitem action='columnCategory' />"
 				+ "</menu>"
 				+ "</popup></ui>";
 
@@ -407,6 +418,7 @@ namespace MonoDevelop.Ide.Gui.Pads
 				columnFile.Active = view.Columns[VisibleColumns.File].Visible;
 				columnProject.Active = view.Columns[VisibleColumns.Project].Visible;
 				columnPath.Active = view.Columns[VisibleColumns.Path].Visible;
+				columnCategory.Active = view.Columns[VisibleColumns.Category].Visible;
 				help.Sensitive = copy.Sensitive = jump.Sensitive =
 					view.Selection != null &&
 					view.Selection.CountSelectedRows () > 0 &&
@@ -461,7 +473,11 @@ namespace MonoDevelop.Ide.Gui.Pads
 				text.Append (task.Description);
 				if (task.WorkspaceObject != null)
 					text.Append (" (").Append (task.WorkspaceObject.Name).Append (")");
-				
+
+				if (!string.IsNullOrEmpty (task.Category)) {
+					text.Append (" ").Append (task.Category);
+				}
+
 				clipboard = Clipboard.Get (Gdk.Atom.Intern ("CLIPBOARD", false));
 				clipboard.Text = text.ToString ();
 				clipboard = Clipboard.Get (Gdk.Atom.Intern ("PRIMARY", false));
@@ -547,6 +563,10 @@ namespace MonoDevelop.Ide.Gui.Pads
 			col = view.AppendColumn (GettextCatalog.GetString ("Path"), view.TextRenderer);
 			col.SetCellDataFunc (view.TextRenderer, new Gtk.TreeCellDataFunc (PathDataFunc));
 			col.Resizable = true;
+
+			col = view.AppendColumn (GettextCatalog.GetString ("Category"), view.TextRenderer);
+			col.SetCellDataFunc (view.TextRenderer, new Gtk.TreeCellDataFunc (CategoryDataFunc));
+			col.Resizable = true;
 		}
 		
 		static void ToggleDataFunc (Gtk.TreeViewColumn column, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
@@ -624,6 +644,15 @@ namespace MonoDevelop.Ide.Gui.Pads
 			if (task == null)
 				return;
 			SetText (textRenderer, model, iter, task, GetPath (task));
+		}
+
+		static void CategoryDataFunc (Gtk.TreeViewColumn column, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
+		{
+			Gtk.CellRendererText textRenderer = (Gtk.CellRendererText)cell;
+			Task task = model.GetValue (iter, DataColumns.Task) as Task; 
+			if (task == null)
+				return;
+			SetText (textRenderer, model, iter, task, task.Category ?? "");
 		}
 		
 		static void SetText (CellRendererText textRenderer, TreeModel model, TreeIter iter, TaskListEntry task, string text)
