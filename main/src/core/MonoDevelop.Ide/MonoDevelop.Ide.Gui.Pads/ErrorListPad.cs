@@ -62,6 +62,8 @@ namespace MonoDevelop.Ide.Gui.Pads
 		TreeModelFilter filter;
 		TreeModelSort sort;
 		ToggleButton errorBtn, warnBtn, msgBtn, logBtn;
+		SearchEntry searchEntry;
+		string currentSearchPattern = null;
 		Hashtable tasks = new Hashtable ();
 		int errorCount;
 		int warningCount;
@@ -157,12 +159,27 @@ namespace MonoDevelop.Ide.Gui.Pads
 			logBtn.TooltipText = GettextCatalog.GetString ("Show build output");
 			logBtn.Toggled += HandleLogBtnToggled;
 			toolbar.Add (logBtn);
-			
+
+			//Dummy widget to take all space between "Build Output" button and SearchEntry
+			toolbar.Add (new HBox (), true);
+
+			searchEntry = new SearchEntry ();
+			searchEntry.Entry.Changed += searchPatternChanged;
+			searchEntry.WidthRequest = 200;
+			searchEntry.Visible = true;
+			toolbar.Add (searchEntry);
+
 			toolbar.ShowAll ();
 
 			UpdatePadIcon ();
 		}
-		
+
+		void searchPatternChanged (object sender, EventArgs e)
+		{
+			currentSearchPattern = searchEntry.Entry.Text;
+			filter.Refilter ();
+		}
+
 		void CreateControl ()
 		{
 			control = new HPaned ();
@@ -171,7 +188,7 @@ namespace MonoDevelop.Ide.Gui.Pads
 			                           typeof (bool),       // read?
 			                           typeof (TaskListEntry));       // read? -- use Pango weight
 
-			TreeModelFilterVisibleFunc filterFunct = new TreeModelFilterVisibleFunc (FilterTaskTypes);
+			TreeModelFilterVisibleFunc filterFunct = new TreeModelFilterVisibleFunc (FilterTasks);
 			filter = new TreeModelFilter (store, null);
 			filter.VisibleFunc = filterFunct;
 			
@@ -693,7 +710,7 @@ namespace MonoDevelop.Ide.Gui.Pads
 			filter.Refilter ();
 		}
 
-		bool FilterTaskTypes (TreeModel model, TreeIter iter)
+		bool FilterTasks (TreeModel model, TreeIter iter)
 		{
 			bool canShow = false;
 
@@ -704,6 +721,14 @@ namespace MonoDevelop.Ide.Gui.Pads
 				if (task.Severity == TaskSeverity.Error && errorBtn.Active) canShow = true;
 				else if (task.Severity == TaskSeverity.Warning && warnBtn.Active) canShow = true;
 				else if (task.Severity == TaskSeverity.Information && msgBtn.Active) canShow = true;
+
+				if (canShow && !string.IsNullOrWhiteSpace (currentSearchPattern)) {
+					canShow = (task.Description != null && task.Description.IndexOf (currentSearchPattern, StringComparison.OrdinalIgnoreCase) != -1) ||
+						(task.Code != null && task.Code.IndexOf (currentSearchPattern, StringComparison.OrdinalIgnoreCase) != -1) ||
+						(task.FileName != null && task.FileName.FileName.IndexOf (currentSearchPattern, StringComparison.OrdinalIgnoreCase) != -1) ||
+						(task.WorkspaceObject != null && task.WorkspaceObject.Name != null && task.WorkspaceObject.Name.IndexOf (currentSearchPattern, StringComparison.OrdinalIgnoreCase) != -1) ||
+						(task.Category != null && task.Category.IndexOf (currentSearchPattern, StringComparison.OrdinalIgnoreCase) != -1);
+				}
 			} catch {
 				//Not yet fully added
 				return false;
