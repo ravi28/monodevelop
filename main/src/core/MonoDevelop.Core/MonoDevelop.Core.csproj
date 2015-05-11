@@ -520,6 +520,7 @@
     <Compile Include="MonoDevelop.Projects\PathBasedProjectItem.cs" />
     <Compile Include="MonoDevelop.Projects\ExportProjectItemTypeAttribute.cs" />
     <Compile Include="MonoDevelop.Projects.Formats.MSBuild\MSBuildProjectInstance.cs" />
+    <Compile Include="MonoDevelop.Projects.Extensions\SupportsTargetCondition.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile.am" />
