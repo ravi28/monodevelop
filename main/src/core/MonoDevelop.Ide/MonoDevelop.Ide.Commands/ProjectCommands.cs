@@ -519,4 +519,49 @@ namespace MonoDevelop.Ide.Commands
 			MessageService.ShowCustomDialog (dlg);
 		}
 	}
+
+	internal class RunCodeAnalysisSolutionHandler : CommandHandler
+	{
+		protected override void Update (CommandInfo info)
+		{
+			info.Enabled = (IdeApp.ProjectOperations.CurrentSelectedSolution != null) &&
+				(IdeApp.ProjectOperations.CurrentBuildOperation.IsCompleted) &&
+				IdeApp.ProjectOperations.CurrentSelectedSolution.GetAllProjects ().Any (p => p.SupportsTarget ("RunCodeAnalysis"));
+		}
+
+		protected override void Run ()
+		{
+			foreach (var proj in IdeApp.ProjectOperations.CurrentSelectedSolution.GetAllProjects ()) {
+				if (proj.SupportsTarget ("RunCodeAnalysis")) {
+					//TODO: Analysis, is setting to "1" OK?
+					proj.GlobalProperties.SetValue ("RunCodeAnalysisOnce", "1");
+				}
+			}
+			IdeApp.ProjectOperations.Build (IdeApp.ProjectOperations.CurrentSelectedSolution);
+		}
+	}
+
+	internal class RunCodeAnalysisProjectHandler : CommandHandler
+	{
+		protected override void Update (CommandInfo info)
+		{
+			if (IdeApp.Workspace.IsOpen) {
+				var project = IdeApp.ProjectOperations.CurrentSelectedProject;
+				if (project != null) {
+					info.Enabled = project.SupportsTarget ("RunCodeAnalysis");
+					info.Text = GettextCatalog.GetString ("Run Code Analysis on {0}", project.Name.Replace ("_","__"));
+					return;
+				}
+			}
+			info.Text = GettextCatalog.GetString ("Run Code Analysis on Project");
+			info.Enabled = false;
+		}
+
+		protected override void Run ()
+		{
+			//TODO: Analysis, is setting to "1" OK?
+			IdeApp.ProjectOperations.CurrentSelectedProject.GlobalProperties.SetValue ("RunCodeAnalysisOnce", "1");
+			IdeApp.ProjectOperations.Build (IdeApp.ProjectOperations.CurrentSelectedProject);
+		}
+	}
 }
