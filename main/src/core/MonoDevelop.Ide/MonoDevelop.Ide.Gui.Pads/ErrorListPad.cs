@@ -666,7 +666,7 @@ namespace MonoDevelop.Ide.Gui.Pads
 		static void CategoryDataFunc (Gtk.TreeViewColumn column, Gtk.CellRenderer cell, Gtk.TreeModel model, Gtk.TreeIter iter)
 		{
 			Gtk.CellRendererText textRenderer = (Gtk.CellRendererText)cell;
-			Task task = model.GetValue (iter, DataColumns.Task) as Task; 
+			var task = model.GetValue (iter, DataColumns.Task) as TaskListEntry; 
 			if (task == null)
 				return;
 			SetText (textRenderer, model, iter, task, task.Category ?? "");

@@ -90,7 +90,7 @@ namespace MonoDevelop.Ide.Tasks
 		{
 		}
 
-		public TaskListEntry (FilePath file, string description, int column, int line, TaskSeverity severity, TaskPriority priority, IWorkspaceObject parent, object owner, string category)
+		public TaskListEntry (FilePath file, string description, int column, int line, TaskSeverity severity, TaskPriority priority, WorkspaceObject parent, object owner, string category)
 		{
 			this.file = file;
 			this.description = description;
