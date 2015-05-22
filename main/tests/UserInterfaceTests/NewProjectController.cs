@@ -104,12 +104,22 @@ namespace UserInterfaceTests
 			return results.Length > 0;
 		}
 
+		/**
+		 * Test 1 - Have Multiple projects under a solution and then ExecuteCommand - ProjectOptions.
+		 * 
+		 * Test 2 - Create a project with name "Project1". Create another project under same solution as "Project2". Using project options rename Project2 to Project1.
+		 */
 		public bool SelectProjectOptions (string optionRoot, string option)
 		{
 			Session.ExecuteCommand (ProjectCommands.ProjectOptions);
 			return Session.SelectElement (c => c.TreeView ().Marked ("optionCategoriesTreeView").Model ("optionCategoriesTreeStore__Name").Contains (optionRoot).NextSiblings ().Text (option));
 		}
 
+		/**
+		 * Test 1 - Navigate to Project Options -> Compiler -> Enable Xml documentation. Select Browse button and open a file that is NOT an xml file eg: .proj file.
+		 * Result: The IDE goes unresponsive
+		 *
+		 */
 		public void SelectGenerateXmlOutputCheckButton ()
 		{
 			Session.ToggleElement (c => c.CheckButton ().Marked ("generateXmlOutputCheckButton"), true);
