@@ -28,6 +28,8 @@ using MonoDevelop.Components.AutoTest;
 using MonoDevelop.Ide.Commands;
 using NUnit.Framework;
 using System.Threading;
+using Xwt;
+
 
 namespace UserInterfaceTests
 {
@@ -101,6 +103,43 @@ namespace UserInterfaceTests
 			AppResult[] results = Session.Query (c => c.Marked (widgetName).Sensitivity (true));
 			return results.Length > 0;
 		}
+
+		public bool SelectProjectOptions (string optionRoot, string option)
+		{
+			Session.ExecuteCommand (ProjectCommands.ProjectOptions);
+			return Session.SelectElement (c => c.TreeView ().Marked ("optionCategoriesTreeView").Model ("optionCategoriesTreeStore__Name").Contains (optionRoot).NextSiblings ().Text (option));
+		}
+
+		public void SelectGenerateXmlOutputCheckButton ()
+		{
+			Session.ToggleElement (c => c.CheckButton ().Marked ("generateXmlOutputCheckButton"), true);
+			Session.ClickElement (c => c.Button ().Marked ("buttonOk"));
+		}
+
+		public bool CreateNewFile (string fileName)
+		{
+			Session.ExecuteCommand (FileCommands.NewFile);
+			Session.EnterText (c => c.Textfield ().Marked ("nameEntry"), fileName);
+			return Session.ClickElement (c => c.Button ().Marked ("okButton"));
+		}
+
+		public void NavigateToMethod ()
+		{
+			Session.ExecuteCommand (TextEditorCommands.DocumentEnd);
+			for (int i = 0; i < 4; i++) {
+				Session.ExecuteCommand (TextEditorCommands.LineUp);
+			}
+			Session.ExecuteCommand (TextEditorCommands.InsertNewLine);
+		}
+
+		public void EnterTextInEditor ()
+		{
+			Session.EnterText (c => c.Textfield ().Marked ("MonoDevelop.Ide.Gui.Document"), "Testing afasfasdgsdgasdgsadgs");
+			Session.EnterText (c => c.Textfield ().Marked ("IdeApp.Workbench.ActiveDocument"), "Testing afasfasdgsdgasdgsadgs");
+			Session.ExecuteCommand (ProjectCommands.AddReference);
+		} 
+
 	}
 }
 
+ 

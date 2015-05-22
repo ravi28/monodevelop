@@ -32,6 +32,7 @@ using System.Threading;
 
 using MonoDevelop.Core;
 using NUnit.Framework;
+using Mono.TextEditor;
 
 namespace UserInterfaceTests
 {
@@ -117,6 +118,54 @@ namespace UserInterfaceTests
 				}
 
 				OnBuildTemplate ();
+
+			} catch (Exception e) {
+				Assert.Fail (e.StackTrace);
+			} finally {
+				var actualSolutionDirectory = GetSolutionDirectory ();
+				Ide.CloseAll ();
+				try {
+					if (Directory.Exists (actualSolutionDirectory))
+						Directory.Delete (actualSolutionDirectory, true);
+				} catch (IOException) { }
+			}
+		}
+
+		public void CreateBuildAndModifyProject (TemplateSelectionOptions templateOptions, Action beforeBuild,
+			GitOptions gitOptions = null, object miscOptions = null)
+		{
+			var templateName = templateOptions.TemplateKind;
+			var projectName = !string.IsNullOrEmpty (templateOptions.ProjectName) ? templateOptions.ProjectName: GenerateProjectName (templateName);
+
+			SetUpTemplateScreenshot (projectName);
+			var solutionParentDirectory = Util.CreateTmpDir (projectName);
+			try {
+				var newProject = new NewProjectController ();
+				newProject.Open ();
+				TakeScreenShot ("Open");
+
+				OnSelectTemplate (newProject, templateOptions);
+
+				OnEnterTemplateSpecificOptions (newProject, projectName, miscOptions);
+
+				OnEnterProjectDetails (newProject, projectName, projectName, solutionParentDirectory, gitOptions);
+
+				try {
+					beforeBuild ();
+					TakeScreenShot ("BeforeBuild");
+				} catch (TimeoutException e) {
+					TakeScreenShot ("BeforeBuildActionFailed");
+					Assert.Fail (e.ToString ());
+				}
+
+				OnBuildTemplate ();
+
+				string optionRoot = "Build";
+				string option = "Compiler";
+				string fileName = "EmptyType";
+
+				OnEnterProjectOptions (newProject, optionRoot, option, fileName);
+
 			} catch (Exception e) {
 				Assert.Fail (e.StackTrace);
 			} finally {
@@ -162,6 +211,16 @@ namespace UserInterfaceTests
 			TakeScreenShot ("AfterProjectDetailsFilled");
 
 			Session.RunAndWaitForTimer (() => newProject.Next(), "Ide.Shell.SolutionOpened");
+		}
+
+		protected virtual void OnEnterProjectOptions(NewProjectController newProject, string optionRoot, 
+			string option, string fileName) 
+		{
+			newProject.SelectProjectOptions (optionRoot, option);
+			newProject.SelectGenerateXmlOutputCheckButton ();
+			Assert.IsTrue (newProject.CreateNewFile (fileName));
+			newProject.NavigateToMethod ();
+			newProject.EnterTextInEditor ();
 		}
 
 		protected virtual void OnBuildTemplate ()

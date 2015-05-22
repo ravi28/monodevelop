@@ -33,6 +33,8 @@ using MonoDevelop.Core;
 using MonoDevelop.Ide.Extensions;
 using MonoDevelop.Ide.Gui.Components;
 using MonoDevelop.Components;
+using System.ComponentModel;
+using MonoDevelop.Components.AutoTest;
 
 namespace MonoDevelop.Ide.Gui.Dialogs
 {
@@ -61,7 +63,7 @@ namespace MonoDevelop.Ide.Gui.Dialogs
 		const string emptyCategoryIcon = "md-prefs-generic";
 		const Gtk.IconSize treeIconSize = IconSize.Menu;
 		const Gtk.IconSize headerIconSize = IconSize.Button;
-		
+
 		public object DataObject {
 			get {
 				return mainDataObject;
@@ -83,8 +85,10 @@ namespace MonoDevelop.Ide.Gui.Dialogs
 		}
 		
 		public OptionsDialog (Gtk.Window parentWindow, object dataObject, string extensionPath) : this (parentWindow, dataObject, extensionPath, true)
-		{}
-		
+		{
+			
+		}
+			
 		public OptionsDialog (Gtk.Window parentWindow, object dataObject, string extensionPath, bool removeEmptySections)
 		{
 			buttonCancel = new Gtk.Button (Gtk.Stock.Cancel);
@@ -96,6 +100,8 @@ namespace MonoDevelop.Ide.Gui.Dialogs
 
 			mainHBox = new HBox ();
 			tree = new TreeView ();
+
+			tree.Name = "optionCategoriesTreeView";
 			var sw = new ScrolledWindow ();
 			sw.Add (tree);
 			sw.HscrollbarPolicy = PolicyType.Never;
@@ -183,7 +189,7 @@ namespace MonoDevelop.Ide.Gui.Dialogs
 			tree.ExpanderColumn = col;
 			
 			tree.Selection.Changed += OnSelectionChanged;
-			
+
 			Child.ShowAll ();
 			
 			InitializeContext (extensionContext);
@@ -194,6 +200,11 @@ namespace MonoDevelop.Ide.Gui.Dialogs
 
 			DefaultWidth = 960;
 			DefaultHeight = 680;
+
+			// Set up the tree store
+			SemanticModelAttribute modelAttr = new SemanticModelAttribute ("optionCategoriesTreeStore__Name");
+			TypeDescriptor.AddAttributes (store, modelAttr);
+
 		}
 		
 		void PixbufCellDataFunc (TreeViewColumn col, CellRenderer cell, TreeModel model, TreeIter iter)
@@ -506,7 +517,7 @@ namespace MonoDevelop.Ide.Gui.Dialogs
 			}
 			
 			foreach (Gtk.Widget w in pageFrame.Children) {
-				Container cc = w as Gtk.Container;
+				Gtk.Container cc = w as Gtk.Container;
 				if (cc != null) {
 					foreach (Gtk.Widget cw in cc)
 						cw.Hide ();
@@ -549,7 +560,7 @@ namespace MonoDevelop.Ide.Gui.Dialogs
 			pageFrame.PackStart (page.Widget, true, true, 0);
 			
 			// Ensures that the Shown event is fired for each panel
-			Container c = page.Widget as Gtk.Container;
+			Gtk.Container c = page.Widget as Gtk.Container;
 			if (c != null) {
 				foreach (Gtk.Widget cw in c)
 					cw.Show ();
@@ -729,6 +740,24 @@ namespace MonoDevelop.Ide.Gui.Dialogs
 			}
 		}
 
+		void TreeViewSelectionChanged (object sender, EventArgs e)
+		{
+			FillTree ();
+		}
+
+		bool TreeViewSelection (TreeSelection selection, TreeModel model, TreePath path, bool path_currently_selected)
+		{
+			TreeIter iter;
+			if (model.GetIter (out iter, path)) {
+				var category = model.GetValue (iter, 0) as OptionsDialogSection;
+				if (category.HasId) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+			
 		protected virtual void OnButtonOkClicked (object sender, System.EventArgs e)
 		{
 			// Validate changes before saving
